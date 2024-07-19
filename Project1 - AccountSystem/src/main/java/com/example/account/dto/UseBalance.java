@@ -1,5 +1,6 @@
     package com.example.account.dto;
 
+    import com.example.account.aop.AccountLockIdInterface;
     import com.example.account.type.TransactionResultType;
     import jakarta.validation.constraints.*;
     import lombok.*;
@@ -10,7 +11,8 @@
         @Getter
         @Setter
         @AllArgsConstructor
-        public static class Request {
+        public static class Request implements AccountLockIdInterface {
+            //getAccountNumber는 롬복에 있어서 자동으로 인터페이스가 구현이됨
             @NotNull
             @Min(1)
             private Long userId;
