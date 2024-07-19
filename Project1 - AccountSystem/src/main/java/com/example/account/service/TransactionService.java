@@ -44,7 +44,10 @@ public class TransactionService {
 
         return TransactionDto.fromEntity(
                 saveAndGetTransaction(
-                        TransactionResultType.S, account, amount));
+                        TransactionType.USE,
+                        TransactionResultType.S,
+                        account,
+                        amount));
     }
 
     private void validateUseBalance(AccountUser user, Account account,
@@ -67,15 +70,18 @@ public class TransactionService {
     public void saveFailedUseTransaction(String accountNumber, Long amount) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
-        saveAndGetTransaction(TransactionResultType.F, account, amount);
+        saveAndGetTransaction(TransactionType.USE,TransactionResultType.F,
+                account, amount);
     }
 
-    private Transaction saveAndGetTransaction(TransactionResultType transactionResultType,
+    private Transaction saveAndGetTransaction(
+            TransactionType transactionType,
+            TransactionResultType transactionResultType,
                                 Account account,
                                 Long amount) {
         return transactionRepository.save(
                 Transaction.builder()
-                        .transactionType(TransactionType.USE)
+                        .transactionType(transactionType)
                         .transactionResultType(transactionResultType)
                         .account(account)
                         .amount(amount)
@@ -85,5 +91,57 @@ public class TransactionService {
                         .transactionAt(LocalDateTime.now())
                         .build()
         );
+    }
+
+    @Transactional
+    public TransactionDto cancelBalance(
+            String transactionId,
+            String accountNumber,
+            Long amount
+    ) {
+        Transaction transaction = transactionRepository.findByTransactionId(transactionId)
+                        .orElseThrow(()->new AccountException(ErrorCode.TRANSACTION_NOT_FOUND));
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        validateCancelBalance(transaction,account,amount);
+
+        account.cancelBalance(amount);
+
+        return TransactionDto.fromEntity(
+                saveAndGetTransaction(
+                        TransactionType.CANCEL,
+                        TransactionResultType.S,
+                        account,
+                        amount));
+    }
+
+    private void validateCancelBalance(Transaction transaction, Account account, Long amount) {
+        // 트랜잭션의 계좌번호와 받은 계좌 번호가 다를시
+        if(!Objects.equals(transaction.getAccount().getId(), account.getId())){
+            throw new AccountException(ErrorCode.TRANSACTION_ACCOUNT_NOT_MATCH);
+        }
+        // 취소하는 금액이 해당 트랜잭션의 양이랑 다를때
+        if(!Objects.equals(transaction.getAmount(),amount)){
+            throw new AccountException(ErrorCode.CANCEL_MUST_FULLY);
+        }
+        // 취소하는 트랜잭션이 1년이상 넘은 트랜잭션일때
+        if(transaction.getTransactionAt().isBefore(LocalDateTime.now().minusYears(1))){
+            throw new AccountException(ErrorCode.TOO_OLD_ORDER_TO_CANCEL);
+        }
+    }
+
+    @Transactional
+    public void saveFailedCancelTransaction(String accountNumber, Long amount) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+        saveAndGetTransaction(TransactionType.CANCEL,TransactionResultType.F,
+                account, amount);
+    }
+
+    @Transactional
+    public TransactionDto queryTransaction(String transactionId) {
+        return TransactionDto.fromEntity(transactionRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new AccountException(ErrorCode.TRANSACTION_NOT_FOUND)));
     }
 }
