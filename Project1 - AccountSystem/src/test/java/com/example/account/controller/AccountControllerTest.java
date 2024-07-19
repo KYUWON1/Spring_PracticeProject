@@ -18,6 +18,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -92,6 +94,7 @@ class AccountControllerTest {
 
 
     @Test
+    @DisplayName("계좌 정보 가져오기 성공")
     void successGetAccount() throws Exception {
         //given
         given(accountService.getAccount(anyLong()))
@@ -106,5 +109,36 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$.accountNumber").value("3456"))
                 .andExpect(jsonPath("$.accountStatus").value("IN_USE"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("계좌 정보 리스트 가져오기 성공")
+    void successGetAccountByUserId() throws Exception {
+        //given
+        List<AccountDto> accountDtos =
+                Arrays.asList(
+                        AccountDto.builder()
+                                .accountNumber("1234567890")
+                                .balance(1000L).build(),
+                        AccountDto.builder()
+                                .accountNumber("1234567811")
+                                .balance(1500L).build(),
+                        AccountDto.builder()
+                                .accountNumber("1234567111")
+                                .balance(2000L).build()
+
+                        );
+        given(accountService.getAccountByUserId(anyLong()))
+                .willReturn(accountDtos);
+        //when
+        //then
+        mockMvc.perform(get("/account?user_id=1"))
+                .andDo(print())
+                .andExpect(jsonPath("$.[0].accountNumber").value("1234567890"))
+                .andExpect(jsonPath("$.[0].balance").value(1000L))
+                .andExpect(jsonPath("$.[1].accountNumber").value("1234567811"))
+                .andExpect(jsonPath("$.[1].balance").value(1500L))
+                .andExpect(jsonPath("$.[2].accountNumber").value("1234567111"))
+                .andExpect(jsonPath("$.[2].balance").value(2000L));
     }
 }

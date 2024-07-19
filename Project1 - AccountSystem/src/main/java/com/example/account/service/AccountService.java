@@ -3,6 +3,7 @@ package com.example.account.service;
 import com.example.account.domain.Account;
 import com.example.account.domain.AccountUser;
 import com.example.account.dto.AccountDto;
+import com.example.account.dto.AccountInfo;
 import com.example.account.exception.AccountException;
 import com.example.account.repository.AccountRepository;
 import com.example.account.repository.AccountUserRepository;
@@ -13,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +63,18 @@ public class AccountService {
         accountRepository.save(account);
 
         return AccountDto.fromEntity(account);
+    }
+
+    @Transactional
+    public List<AccountDto> getAccountByUserId(Long userId){
+         AccountUser accountUser = accountUserRepository.findById(userId)
+                 .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
+
+        List<Account> accounts = accountRepository.findByAccountUser(accountUser);
+
+        return accounts.stream()
+                .map(AccountDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
     private void validateCreateAccount(AccountUser accountUser){

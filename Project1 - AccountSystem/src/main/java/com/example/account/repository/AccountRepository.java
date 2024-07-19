@@ -5,6 +5,7 @@ import com.example.account.domain.AccountUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository // Bean으로 등록하기위해서
@@ -13,6 +14,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> { //활�
     Optional<Account> findFirstByOrderByIdDesc();
 
     Optional<Account> findByAccountNumber(String accountNumber);
-    // User를 통해서 User가 계좌 몇개 가지고있는지 반환
+
+    List<Account> findByAccountUser(AccountUser accountUser);
+
     Integer countByAccountUser(AccountUser accountUser);
 }

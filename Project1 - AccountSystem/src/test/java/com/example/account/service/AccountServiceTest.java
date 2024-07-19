@@ -16,6 +16,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -253,4 +255,56 @@ class AccountServiceTest {
 
     }
 
+    @Test
+    @DisplayName("계좌 리스트 가져오기 성공")
+    void successGetAccountsByUserId() {
+        //given
+        AccountUser Pobi = AccountUser.builder()
+                .id(12L)
+                .name("Pobi").build();
+        List<Account> accounts = Arrays.asList(
+                Account.builder()
+                        .accountUser(Pobi)
+                        .accountNumber("1234567890")
+                        .balance(1000L)
+                        .build(),
+                Account.builder()
+                        .accountUser(Pobi)
+                        .accountNumber("1234567811")
+                        .balance(1500L)
+                        .build(),
+                Account.builder()
+                        .accountUser(Pobi)
+                        .accountNumber("1234567822")
+                        .balance(2000L)
+                        .build()
+        );
+        given(accountUserRepository.findById(anyLong()))
+                .willReturn(Optional.of(Pobi));
+        given(accountRepository.findByAccountUser(any()))
+                .willReturn(accounts);
+        //when
+        List<AccountDto> accountDtos = accountService.getAccountByUserId(1L);
+        //then
+        assertEquals(3,accountDtos.size());
+        assertEquals("1234567890",accountDtos.get(0).getAccountNumber());
+        assertEquals(1000L,accountDtos.get(0).getBalance());
+        assertEquals("1234567811",accountDtos.get(1).getAccountNumber());
+        assertEquals(1500L,accountDtos.get(1).getBalance());
+        assertEquals("1234567822",accountDtos.get(2).getAccountNumber());
+        assertEquals(2000L,accountDtos.get(2).getBalance());
+    }
+
+    @Test
+    @DisplayName("계좌 리스트 가져오기 실패 - 유저 찾을수 없음 ")
+    void failedToGetAccounts() {
+        //given
+        given(accountUserRepository.findById(anyLong()))
+                .willReturn(Optional.empty());
+        //when
+        AccountException accountException = assertThrows(AccountException.class,
+                () -> accountService.getAccountByUserId(1L));
+        //then
+        assertEquals(ErrorCode.USER_NOT_FOUND,accountException.getErrorCode());
+    }
 }
