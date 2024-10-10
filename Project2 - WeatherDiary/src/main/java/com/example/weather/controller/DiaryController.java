@@ -1,11 +1,13 @@
 package com.example.weather.controller;
 
+import com.example.weather.domain.Diary;
 import com.example.weather.service.DiaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,5 +24,14 @@ public class DiaryController {
         diaryService.createDiary(date,text);
     }
 
+    @GetMapping("/read/diary")
+    public List<Diary> readDiary(
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ){
+        return diaryService.readDiary(date);
+    }
+
+    
 
 }
