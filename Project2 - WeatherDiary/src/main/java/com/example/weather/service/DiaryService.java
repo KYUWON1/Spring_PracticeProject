@@ -51,6 +51,13 @@ public class DiaryService {
         return diaryRepository.findAllByDateBetween(startDate,endDate);
     }
 
+    public void updateDiary(LocalDate date, String text) {
+        Diary nowDiary = diaryRepository.getFirstByDate(date);
+        nowDiary.setText(text);
+        // id 값이 그래도이기 때문에 db 자체에거 덥어쓰기 진행
+        diaryRepository.save(nowDiary); 
+    }
+
     private String getWeatherString(){
         String apiUrl = "https://api.openweathermap.org/data/2" +
             ".5/weather?q=seoul&appid=" + apiKey;
@@ -101,5 +108,6 @@ public class DiaryService {
 
         return resultMap;
     }
+
 
 }
