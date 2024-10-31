@@ -9,6 +9,8 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -20,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+// 내부 모든 메소드는 Transaction, 모두 readOnly만 가능
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class DiaryService {
 
@@ -28,6 +32,7 @@ public class DiaryService {
     @Value("${openweathermap.key}")
     private String apiKey;
 
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void createDiary(LocalDate date,String text){
         // API로 날씨 데이터 가져오기
         String weatherData = getWeatherString();
@@ -43,10 +48,12 @@ public class DiaryService {
         diaryRepository.save(nowDiary);
     }
 
+    @Transactional(readOnly = true)
     public List<Diary> readDiary(LocalDate date) {
         return diaryRepository.findAllByDate(date);
     }
 
+    @Transactional(readOnly = true)
     public List<Diary> readDiaries(LocalDate startDate, LocalDate endDate) {
         return diaryRepository.findAllByDateBetween(startDate,endDate);
     }
