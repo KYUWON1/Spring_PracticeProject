@@ -2,6 +2,7 @@ package com.example.weather.service;
 
 import com.example.weather.Repository.DateWeatherRepository;
 import com.example.weather.Repository.DiaryRepository;
+import com.example.weather.WeatherApplication;
 import com.example.weather.domain.DateWeather;
 import com.example.weather.domain.Diary;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -32,11 +35,16 @@ public class DiaryService {
 
     private final DateWeatherRepository dateWeatherRepository;
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(WeatherApplication.class);
+
     @Value("${openweathermap.key}")
     private String apiKey;
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void createDiary(LocalDate date,String text){
+        logger.info("started to create diary");
+
         DateWeather dateWeather = getDateWeather(date);
 
         // 파싱된 데이터 + 일기 DB 삽입
@@ -44,6 +52,7 @@ public class DiaryService {
         nowDiary.setDateWeather(dateWeather);
         nowDiary.setText(text);
         diaryRepository.save(nowDiary);
+        logger.info("end to create diary");
     }
 
     private DateWeather getDateWeather(LocalDate date){
@@ -63,6 +72,7 @@ public class DiaryService {
 
     @Transactional(readOnly = true)
     public List<Diary> readDiary(LocalDate date) {
+        logger.debug("read diary");
         return diaryRepository.findAllByDate(date);
     }
 
@@ -83,9 +93,9 @@ public class DiaryService {
     }
 
     @Transactional
-    // 0 0 1
-    @Scheduled(cron="0/5 * * * * *") // 0초 0분 1시 매일매일
+    @Scheduled(cron="0 0 1 * * *") // 0초 0분 1시 매일매일
     public void saveWeatherDate(){
+        logger.info("날씨 데이터 스케줄러 동작");
         dateWeatherRepository.save(getWeatherFromApi());
     }
 
